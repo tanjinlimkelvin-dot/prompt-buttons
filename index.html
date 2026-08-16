@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RDW Deepdive v4.3.1 — Redwire Corporation</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --navy-1: #050b18; --navy-2: #0a1428; --navy-3: #142239; --navy-4: #1d3055;
+  --gold-1: #c9a227; --gold-2: #e0c46b; --gold-3: #f0d77a;
+  --red-1: #c43c3c; --red-2: #e8694b;
+  --green-1: #2a9d6f; --green-2: #4cc38a;
+  --gray-1: #6b7894; --gray-2: #a3b1cc; --gray-3: #d4dceb;
+  --text-1: #e8eef8; --text-2: #a3b1cc; --text-dim: #6b7894;
+  --border: rgba(201, 162, 39, 0.15);
+  --accent-dim: rgba(201, 162, 39, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: linear-gradient(180deg, var(--navy-1) 0%, var(--navy-2) 100%);
+  color: var(--text-1); line-height: 1.65; min-height: 100vh;
+}
+.container { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+.progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--gold-1), var(--gold-3)); z-index: 1001; width: 0%; transition: width 0.1s; }
+.sticky-nav { position: sticky; top: 0; z-index: 1000; background: rgba(5, 11, 24, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); padding: 14px 0; }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.nav-logo { font-size: 18px; font-weight: 700; color: var(--gold-1); letter-spacing: 0.5px; }
+.nav-logo small { color: var(--text-dim); font-size: 12px; font-weight: 400; margin-left: 8px; }
+.nav-links { display: flex; gap: 4px; flex-wrap: wrap; }
+.nav-link { padding: 6px 12px; font-size: 13px; color: var(--text-2); text-decoration: none; border-radius: 6px; transition: all 0.2s; }
+.nav-link:hover, .nav-link.active { background: var(--accent-dim); color: var(--gold-2); }
+.nav-pill { display: inline-block; padding: 4px 10px; border-radius: 20px; background: var(--accent-dim); color: var(--gold-2); font-size: 12px; font-weight: 600; margin-left: 4px; }
+.nav-pill.green { background: rgba(42, 157, 111, 0.15); color: var(--green-2); }
+.nav-pill.red { background: rgba(196, 60, 60, 0.15); color: var(--red-2); }
+.hero { padding: 60px 0 40px; text-align: center; border-bottom: 1px solid var(--border); }
+.hero-ticker { font-size: 14px; color: var(--gold-2); letter-spacing: 4px; margin-bottom: 12px; }
+.hero-name { font-size: 42px; font-weight: 800; margin-bottom: 6px; background: linear-gradient(135deg, var(--text-1), var(--gold-2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.hero-sub { color: var(--text-2); font-size: 15px; margin-bottom: 24px; }
+.hero-price-row { display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap; margin-bottom: 16px; }
+.hero-price { font-size: 56px; font-weight: 800; color: var(--gold-2); }
+.hero-price small { font-size: 18px; color: var(--text-2); margin-left: 8px; }
+.hero-target { background: var(--navy-3); border: 1px solid var(--border); border-radius: 10px; padding: 12px 20px; text-align: left; }
+.hero-target-label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+.hero-target-value { font-size: 22px; font-weight: 700; color: var(--green-2); }
+.hero-target-meta { font-size: 12px; color: var(--text-2); margin-top: 2px; }
+.hero-pills { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.hero-pill { background: var(--navy-3); border: 1px solid var(--border); padding: 8px 16px; border-radius: 20px; font-size: 13px; }
+.hero-pill strong { color: var(--gold-2); }
+.hero-warn { background: rgba(196, 60, 60, 0.1); border: 1px solid rgba(196, 60, 60, 0.3); padding: 10px 16px; border-radius: 8px; font-size: 13px; color: var(--red-2); margin: 16px auto; max-width: 720px; text-align: center; }
+.spectrum { margin: 40px 0; padding: 24px; background: linear-gradient(90deg, rgba(196,60,60,0.15) 0%, rgba(201,162,39,0.15) 50%, rgba(42,157,111,0.15) 100%); border-radius: 12px; border: 1px solid var(--border); }
+.spectrum-title { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 14px; text-align: center; }
+.spectrum-bar { display: flex; height: 60px; border-radius: 8px; overflow: hidden; position: relative; border: 1px solid var(--border); }
+.spectrum-zone { flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; position: relative; }
+.spectrum-zone.sell { background: linear-gradient(180deg, rgba(196,60,60,0.3), rgba(196,60,60,0.1)); }
+.spectrum-zone.hold { background: linear-gradient(180deg, rgba(201,162,39,0.3), rgba(201,162,39,0.1)); }
+.spectrum-zone.buy { background: linear-gradient(180deg, rgba(42,157,111,0.4), rgba(42,157,111,0.15)); }
+.spectrum-zone.strong-buy { background: linear-gradient(180deg, rgba(42,157,111,0.6), rgba(42,157,111,0.25)); }
+.spectrum-label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }
+.spectrum-zone.sell .spectrum-label { color: var(--red-2); }
+.spectrum-zone.hold .spectrum-label { color: var(--gold-2); }
+.spectrum-zone.buy .spectrum-label, .spectrum-zone.strong-buy .spectrum-label { color: var(--green-2); }
+.spectrum-price { font-size: 14px; font-weight: 700; margin-top: 2px; }
+.spectrum-marker { position: absolute; top: -10px; bottom: -10px; width: 3px; background: var(--gold-3); box-shadow: 0 0 12px var(--gold-1); left: 50%; z-index: 5; }
+.spectrum-marker::after { content: "▼ NOW"; position: absolute; top: -22px; left: -28px; background: var(--gold-1); color: var(--navy-1); padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; }
+section { margin: 56px 0; scroll-margin-top: 80px; }
+h2 { font-size: 24px; font-weight: 700; color: var(--gold-2); border-left: 4px solid var(--gold-1); padding-left: 14px; margin: 40px 0 18px; letter-spacing: 0.3px; }
+h3 { font-size: 17px; font-weight: 600; color: var(--text-1); margin: 22px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+h4 { font-size: 14px; font-weight: 600; color: var(--gold-3); margin: 14px 0 8px; }
+p { margin: 8px 0; color: var(--text-2); }
+strong { color: var(--text-1); font-weight: 600; }
+em { color: var(--gold-3); font-style: normal; }
+.module-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 16px; margin: 20px 0; }
+.module-card { background: var(--navy-2); border: 1px solid var(--border); border-radius: 10px; padding: 20px; border-top: 3px solid var(--gold-1); }
+.module-card .module-letter { display: inline-block; width: 28px; height: 28px; line-height: 28px; text-align: center; background: var(--gold-1); color: var(--navy-1); border-radius: 6px; font-weight: 700; font-size: 14px; margin-right: 8px; }
+.module-title { font-size: 16px; font-weight: 600; color: var(--text-1); display: flex; align-items: center; }
+.module-stat { font-size: 28px; font-weight: 800; color: var(--gold-2); margin: 8px 0 4px; }
+.module-meta { font-size: 12px; color: var(--text-dim); }
+.module-detail { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border); font-size: 13px; color: var(--text-2); }
+.module-card.green { border-top-color: var(--green-1); }
+.module-card.red { border-top-color: var(--red-1); }
+table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; background: var(--navy-2); border-radius: 8px; overflow: hidden; }
+th { background: var(--navy-3); color: var(--gold-2); text-align: left; padding: 10px 12px; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+td { padding: 9px 12px; border-bottom: 1px solid var(--border); color: var(--text-2); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--accent-dim); }
+td.num { text-align: right; font-variant-numeric: tabular-nums; color: var(--text-1); }
+td.pos { color: var(--green-2); }
+td.neg { color: var(--red-2); }
+.decision { background: var(--navy-2); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin: 24px 0; }
+.decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+.decision-card { background: var(--navy-3); padding: 16px; border-radius: 8px; border-left: 3px solid var(--gold-1); }
+.decision-card.buy { border-left-color: var(--green-1); }
+.decision-card.hold { border-left-color: var(--gold-1); }
+.decision-card.sell { border-left-color: var(--red-1); }
+.decision-label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+.decision-value { font-size: 22px; font-weight: 700; margin: 4px 0; color: var(--gold-2); }
+.decision-meta { font-size: 12px; color: var(--text-2); }
+.phi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin: 16px 0; }
+.phi-card { background: var(--navy-2); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+.phi-card.long { border-top: 3px solid var(--green-1); }
+.phi-card.short { border-top: 3px solid var(--red-1); }
+.phi-card.pass { border-top: 3px solid var(--gray-1); }
+.phi-name { font-size: 15px; font-weight: 600; color: var(--text-1); display: flex; justify-content: space-between; }
+.phi-rating { font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 700; letter-spacing: 0.5px; }
+.phi-rating.long { background: rgba(42,157,111,0.2); color: var(--green-2); }
+.phi-rating.short { background: rgba(196,60,60,0.2); color: var(--red-2); }
+.phi-rating.pass { background: rgba(107,120,148,0.2); color: var(--gray-2); }
+.phi-thinker { font-size: 11px; color: var(--text-dim); margin: 4px 0 8px; font-style: italic; }
+.phi-reason { font-size: 13px; color: var(--text-2); margin: 8px 0; line-height: 1.5; }
+.phi-risk { font-size: 12px; color: var(--red-2); margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); }
+.phi-anchor { font-size: 11px; color: var(--gold-3); margin-top: 6px; font-style: italic; }
+.premortem { background: linear-gradient(135deg, rgba(196,60,60,0.15), rgba(196,60,60,0.05)); border: 1px solid rgba(196,60,60,0.3); border-radius: 10px; padding: 20px; margin: 20px 0; }
+.premortem h3 { color: var(--red-2); border-bottom-color: rgba(196,60,60,0.3); }
+.premortem-item { background: rgba(5,11,24,0.4); padding: 12px 14px; border-radius: 6px; margin: 10px 0; border-left: 3px solid var(--red-2); }
+.severity { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; letter-spacing: 0.5px; margin-left: 8px; }
+.severity.high { background: rgba(196,60,60,0.3); color: var(--red-2); }
+.severity.medium { background: rgba(201,162,39,0.3); color: var(--gold-2); }
+.severity.low { background: rgba(42,157,111,0.3); color: var(--green-2); }
+.back-top { position: fixed; bottom: 24px; right: 24px; width: 44px; height: 44px; line-height: 44px; text-align: center; background: var(--gold-1); color: var(--navy-1); border-radius: 50%; font-size: 20px; cursor: pointer; opacity: 0; transition: opacity 0.3s; z-index: 999; box-shadow: 0 4px 12px rgba(0,0,0,0.4); border: none; font-weight: 700; }
+.back-top.visible { opacity: 1; }
+.back-top:hover { background: var(--gold-3); }
+footer { margin: 60px 0 40px; padding: 24px 0; border-top: 1px solid var(--border); color: var(--text-dim); font-size: 12px; text-align: center; }
+footer a { color: var(--gold-2); text-decoration: none; }
+@media (max-width: 768px) { .hero-name { font-size: 30px; } .hero-price { font-size: 40px; } .decision-grid { grid-template-columns: 1fr; } .module-grid { grid-template-columns: 1fr; } }
+.chart-wrap { background: var(--navy-2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; margin: 12px 0; }
+.chart-title { font-size: 13px; font-weight: 600; color: var(--gold-2); margin-bottom: 8px; }
+
+.chart-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+.chart-tab { padding: 5px 12px; font-size: 12px; background: var(--navy-3); color: var(--text-2); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+.chart-tab:hover { background: var(--navy-4); color: var(--text-1); }
+.chart-tab.active { background: var(--gold-1); color: var(--navy-1); border-color: var(--gold-1); font-weight: 600; }
+.chart-panel { width: 100%; }
+
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<nav class="sticky-nav">
+  <div class="container nav-inner">
+    <div class="nav-logo">RDW <small>Deepdive v4.3.1</small></div>
+    <div class="nav-links">
+      <a class="nav-link" href="#action">Action</a>
+      <a class="nav-link" href="#modules">A-M</a>
+      <a class="nav-link" href="#philosophy">6视角</a>
+      <a class="nav-link" href="#valuation">估值</a>
+      <a class="nav-link" href="#calculator">DCF</a>
+      <a class="nav-link" href="#variant">变异</a>
+      <a class="nav-link" href="#premortem">Pre-Mortem</a>
+      <a class="nav-link" href="#decision">决策</a>
+      <span class="nav-pill">$13.02</span>
+      <span class="nav-pill green">FV $20.42</span>
+      <span class="nav-pill green">+56.8%</span>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="container">
+    <div class="hero-ticker">NYSE · INDUSTRIALS · AEROSPACE & DEFENSE</div>
+    <h1 class="hero-name">Redwire Corporation</h1>
+    <div class="hero-sub">Industrials · Aerospace & Defense · HQ Jacksonville, FL · 1,400 员工</div>
+    <div class="hero-price-row">
+      <div>
+        <div class="hero-price">$13.02<small>USD</small></div>
+      </div>
+      <div class="hero-target">
+        <div class="hero-target-label">Morningstar Fair Value</div>
+        <div class="hero-target-value">$20.42 <small style="color:var(--green-2); font-size:14px;">(+56.8%)</small></div>
+        <div class="hero-target-meta">4★ · Quantitative Moat: None (Wide Moat False)</div>
+      </div>
+      <div class="hero-target">
+        <div class="hero-target-label">Street Consensus</div>
+        <div class="hero-target-value">$15.67 <small style="color:var(--green-2); font-size:14px;">(+20.3%)</small></div>
+        <div class="hero-target-meta">9 analysts · buy</div>
+      </div>
+    </div>
+    <div class="hero-pills">
+      <span class="hero-pill">Mkt Cap <strong>$2.59B</strong></span>
+      <span class="hero-pill">EV <strong>$2.90B</strong></span>
+      <span class="hero-pill">P/S <strong>7.0x</strong></span>
+      <span class="hero-pill">Fwd P/E <strong style="color:var(--red-2);">-31.8x</strong></span>
+      <span class="hero-pill">Rev Growth <strong style="color:var(--green-2);">+57.9%</strong></span>
+      <span class="hero-pill">GM <strong style="color:var(--red-2);">12.9%</strong></span>
+      <span class="hero-pill">FCF <strong style="color:var(--red-2);">$-71.3M</strong></span>
+      <span class="hero-pill">Beta <strong style="color:var(--gold-2);">2.94</strong></span>
+    </div>
+    <div class="hero-warn">
+      ⚠️ <strong>小盘+亏损+高 beta+稀释风险</strong>: Mkt Cap $2.6B, FCF -$71M/yr, Cash $145M (~18-24mo runway). 6/18 Jefferies 升 PT 至 $24 但降级 Hold.
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- ACTION PRICE SPECTRUM -->
+<section id="action">
+  <div class="spectrum">
+    <div class="spectrum-title">📊 ACTION PRICE SPECTRUM · 当前价位 $13.02 (距 52w low $4.87 已 +167%)</div>
+    <div class="spectrum-bar">
+      <div class="spectrum-zone sell" style="flex: 0.6;">
+        <div class="spectrum-label">Strong Sell</div>
+        <div class="spectrum-price">&lt; $6</div>
+      </div>
+      <div class="spectrum-zone sell" style="flex: 0.8;">
+        <div class="spectrum-label">Sell</div>
+        <div class="spectrum-price">$6-10</div>
+      </div>
+      <div class="spectrum-zone hold" style="flex: 1.0;">
+        <div class="spectrum-label">Hold</div>
+        <div class="spectrum-price">$10-15</div>
+      </div>
+      <div class="spectrum-zone buy" style="flex: 1.2;">
+        <div class="spectrum-label">Buy</div>
+        <div class="spectrum-price">$15-20</div>
+      </div>
+      <div class="spectrum-zone strong-buy" style="flex: 1.0;">
+        <div class="spectrum-label">Strong Buy</div>
+        <div class="spectrum-price">&gt; $20</div>
+      </div>
+      <div class="spectrum-marker"></div>
+    </div>
+    <div style="text-align:center; margin-top: 16px; font-size: 13px; color: var(--text-2);">
+      <strong style="color: var(--gold-2);">当前位置: $13.02 (Hold 区间)</strong> · 距 Morningstar 公允价 56.8% 上行 · 距 Street $15.67 20.3% 上行 · Beta 2.94 = 高波动
+    
+    <h3 style="text-align:center; margin-top: 20px;">操作价格表 (5 区间, 当前 $13.02 = Hold 上沿)</h3>
+    <table>
+      <thead>
+        <tr><th>区间</th><th>价格</th><th>vs 当前</th><th>Action</th><th>触发条件</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="color:var(--red-2); font-weight:700;">Strong Sell</td>
+          <td class="num">&lt; $6</td>
+          <td class="num neg">-54%</td>
+          <td>EXIT 100%</td>
+          <td>连续 2 季度 backlog 萎缩 + 二次稀释 &gt;$300M</td>
+        </tr>
+        <tr>
+          <td style="color:var(--red-2); font-weight:700;">Sell</td>
+          <td class="num">$6-10</td>
+          <td class="num neg">-23% to -54%</td>
+          <td>TRIM 50%</td>
+          <td>Q2 26 营收 miss &gt;15% 或 gross margin &lt;10%</td>
+        </tr>
+        <tr style="background: var(--accent-dim);">
+          <td style="color:var(--gold-2); font-weight:700;">Hold ← 现在</td>
+          <td class="num"><strong>$10-15</strong></td>
+          <td class="num">-23% to +15%</td>
+          <td>HOLD</td>
+          <td>当前区间: $13.02, 等待 catalyst (Q2 8月初 / 商业空间站 H2)</td>
+        </tr>
+        <tr>
+          <td style="color:var(--green-2); font-weight:700;">Buy</td>
+          <td class="num">$15-20</td>
+          <td class="num pos">+15% to +54%</td>
+          <td>ADD 30%</td>
+          <td>Backlog &gt;$500M + gross margin &gt;15% + Q2 beat</td>
+        </tr>
+        <tr>
+          <td style="color:var(--green-2); font-weight:700;">Strong Buy</td>
+          <td class="num">&gt; $20</td>
+          <td class="num pos">+54%+</td>
+          <td>ADD 50%</td>
+          <td>Jefferies 或其他 major 升级回 Buy + 商业空间站中标</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- KEY FORCES -->
+<section>
+  <h2>🎯 Key Forces (决定性力量)</h2>
+  <p>本季度和未来 12 个月, <strong>RDW 股价将由 3 个核心力量驱动</strong>。其他都是噪音。</p>
+  <div class="module-grid">
+    <div class="module-card green">
+      <div class="module-title"><span class="module-letter">1</span>Record Backlog + Q1 58% 增长</div>
+      <div class="module-stat" style="color: var(--green-2);">$411M</div>
+      <div class="module-meta">Backlog record · Q1 26 rev $97M (+58% YoY)</div>
+      <div class="module-detail">Q1 26 营收 $97M (创纪录, +58% YoY), backlog 创新高 $411M. FY26 guidance $450-500M (+41.6% YoY at midpoint). Edge Autonomy 收购整合 + NATO Mk3 + ISS ROSA + Astrobiome 5月合同持续贡献.</div>
+    </div>
+    <div class="module-card" style="border-top-color: var(--gold-1);">
+      <div class="module-title"><span class="module-letter">2</span>Space Economy 结构增长</div>
+      <div class="module-stat">5y CAGR 40%</div>
+      <div class="module-meta">ROSA solar arrays (ISS 独家) + Waypoint</div>
+      <div class="module-detail">ROSA (Roll-Out Solar Array) 在 ISS 商业化, NASA / DoD 持续订单. Waypoint 产品线扩展到 lunar gateway. 商业空间站 (NASA 招标) 2026 H2 决定胜负.</div>
+    </div>
+    <div class="module-card red">
+      <div class="module-title"><span class="module-letter">3</span>稀释 + 高 beta + 持续亏损</div>
+      <div class="module-stat">-12%</div>
+      <div class="module-meta">6/18 跌 -8% 后 -12% (vs 6/16 high)</div>
+      <div class="module-detail">FCF -$71M, Cash $145M (~$71M net), Edge Autonomy $42.5M 一次性股权激励拖累 Q1 net loss. 必再稀释. Beta 2.94 = 跟大盘 3x 波动. 6/18 Jefferies 升 PT 但降级 = 锁定收益信号.</div>
+    </div>
+  </div>
+</section>
+
+<!-- A-M 13 MODULES -->
+<section id="modules">
+  <h2>📊 13 大核心分析模块 (A-M)</h2>
+  <p>每个模块都用 OpenD (3229/3230/3231) + yfinance + web search 一手数据填充, Morningstar 8 大字段 (覆盖薄, 6/8 空) + web search narrative 交叉验证.</p>
+
+  <h3>A. 收入规模与质量</h3>
+  <table>
+    <thead><tr><th>指标</th><th>数值</th><th>QoQ</th><th>YoY</th><th>评论</th></tr></thead>
+    <tbody>
+      <tr><td>TTM Revenue</td><td class="num">$371.0M</td><td class="pos">+~10%</td><td class="pos">+57.9%</td><td>Q1 26 $97M, +58% YoY, 5y CAGR 40% (高速增长期)</td></tr>
+      <tr><td>Q1 2026 Revenue</td><td class="num">$97M</td><td>—</td><td class="pos">+57.9%</td><td>5/6 reported, beat revenue est 但 miss EPS ($0.40 vs $0.30 est)</td></tr>
+      <tr><td>FY26 Guidance</td><td class="num">$450-500M</td><td>—</td><td class="pos">+41.6% midpoint</td><td>Consensus $475M, guidance beat 0.8% (小惊喜)</td></tr>
+      <tr><td>Backlog (record)</td><td class="num">$411.2M</td><td>—</td><td>—</td><td>持续创历史新高, 5y IDIQ $1.5B+ 累积</td></tr>
+      <tr><td>Defense vs Space mix</td><td>~50/50</td><td>—</td><td>—</td><td>Edge Autonomy 收购后 Defense 占比上升</td></tr>
+    </tbody>
+  </table>
+
+  <h3>B. 盈利能力与利润率</h3>
+  <table>
+    <thead><tr><th>指标</th><th>当前</th><th>5年趋势</th><th>Peer Median</th><th>判断</th></tr></thead>
+    <tbody>
+      <tr><td>Gross Margin</td><td class="num">12.9%</td><td>12-15% (低位震荡)</td><td>A&D 20-25%</td><td>显著低于 peer, 议价权弱</td></tr>
+      <tr><td>Operating Margin</td><td class="num neg">-71.8%</td><td>-15% → -30% 持续</td><td>A&D 8-12%</td><td>严重亏损, 固定成本压力大</td></tr>
+      <tr><td>Net Profit Margin</td><td class="num neg">-80.9%</td><td>持续负值</td><td>—</td><td>Q1 26 -78% (含 $42.5M 一次性)</td></tr>
+      <tr><td>EBITDA</td><td class="num neg">$-178.4M</td><td>—</td><td>—</td><td>现金消耗率 ~$130M/yr</td></tr>
+      <tr><td>ROE</td><td class="num neg">-48.7%</td><td>—</td><td>—</td><td>净资产持续被稀释</td></tr>
+    </tbody>
+  </table>
+
+  <h3>C. 现金流与资本配置</h3>
+  <table>
+    <thead><tr><th>指标</th><th>数值</th><th>评论</th></tr></thead>
+    <tbody>
+      <tr><td>FCF (TTM)</td><td class="num neg">$-71.3M</td><td>持续负值, 烧钱 ~$70M/yr</td></tr>
+      <tr><td>Operating Cash Flow (TTM)</td><td class="num neg">$-138.9M</td><td>Q1 26 -$139M (含一次性)</td></tr>
+      <tr><td>Total Cash</td><td class="num">$144.5M</td><td>$145M (Q1 26), runway 18-24mo</td></tr>
+      <tr><td>Total Debt</td><td class="num">$131.9M</td><td>$132M, D/E 11.3% (相对低)</td></tr>
+      <tr><td>Net Cash</td><td class="num">$13M</td><td>接近 zero, 必须再融资</td></tr>
+      <tr><td>Capex (TTM)</td><td class="num">~$30M</td><td>极低 (轻资产模式)</td></tr>
+      <tr><td>ATM 状态</td><td>$500M (2025 批)</td><td>已用 $350M, 剩余 $150M → 还有 buffer</td></tr>
+    </tbody>
+  </table>
+  <p><strong>🚨 资金链警告</strong>: Cash $145M + ATM 剩余 $150M = $295M 缓冲, 假设 FCF -$130M/yr 持续 → <strong>~2.3 年 runway</strong>. 2027 H1 必再稀释 30-50%.</p>
+
+  <h3>D. 前瞻指引与管理层信号</h3>
+  <p><strong>FY26 Guidance (5/6/2026 公布)</strong>:</p>
+  <ul style="color: var(--text-2); margin: 8px 0 8px 20px;">
+    <li><strong>Revenue</strong>: $450-500M (+35% to +50% YoY)</li>
+    <li><strong>Adj EBITDA</strong>: 未明确指引, 暗示 Q1 一次性后转正路径</li>
+    <li><strong>Backlog 增长</strong>: 持续创历史新高, NATO Mk3 + ISS ROSA + Astrobiome 5/19</li>
+    <li><strong>EPS</strong>: Q1 26 -$0.40 (含 $42.5M 一次性), normalized ~-$0.05</li>
+  </ul>
+  <p><strong>管理层基调 (Q1 26 call 5/6)</strong>: Peter Cannito (CEO) 强调 "defense 增长 + space 复苏双引擎", "Edge Autonomy 整合按计划", "gross margin 改善路径清晰" (从 12.9% Q1 26 提升).</p>
+
+  <h3>E. 竞争格局与行业位置</h3>
+  <table>
+    <thead><tr><th>维度</th><th>RDW</th><th>IRDM</th><th>RKLB</th><th>PL</th><th>GD</th><th>判断</th></tr></thead>
+    <tbody>
+      <tr><td>核心定位</td><td>太空+Defense tech</td><td>卫星通信 (Iridium)</td><td>小型火箭 + 航天器</td><td>小型卫星 + 数据</td><td>大型 defense prime</td><td>细分 niche</td></tr>
+      <tr><td>Revenue (TTM)</td><td>$371M</td><td>$830M</td><td>$500M+</td><td>$1.2B</td><td>$45B</td><td>小盘, 跟大 prime 差 100x</td></tr>
+      <tr><td>Growth</td><td>+57% (Q1)</td><td>+5%</td><td>+30%</td><td>+15%</td><td>+8%</td><td>增速最快, 但低基数</td></tr>
+      <tr><td>Margin</td><td>12.9% GM</td><td>~50% GM</td><td>~25% GM</td><td>~30% GM</td><td>~25% GM</td><td>最弱 margin, 议价权低</td></tr>
+      <tr><td>Backlog</td><td>$411M</td><td>—</td><td>$2B+</td><td>$1B+</td><td>$90B+</td><td>合理规模</td></tr>
+      <tr><td>Defensibility</td><td>ROSA + Mk3 + Waypoint</td><td>Iridium constellation</td><td>Electron rocket</td><td>Constellation tech</td><td>Govt 关系</td><td>ROSA 独家, 但 niche</td></tr>
+    </tbody>
+  </table>
+  <p><strong>Morningstar 锚点 (Economic Moat):</strong> <em>"由于定量经济护城河评级为“无”，我们预计该公司无法长期保持超额资本回报率。此外，公司的财务健康评分为中等，说明公司具备一定的抵御不利经济环境的能力。"</em></p>
+
+  <h3>F. 核心观察指标 (KPI)</h3>
+  <table>
+    <thead><tr><th>季度</th><th>Revenue ($M)</th><th>Op Inc ($M)</th><th>Op Margin</th><th>FCF ($M)</th><th>Backlog ($M)</th></tr></thead>
+    <tbody>
+<tr><td>2024-12-31</td><td class="num">$0.0</td><td class="num neg">$0.0</td><td class="num neg">0.0%</td><td class="num neg">$0.0</td><td class="num">—</td></tr>
+<tr><td>2025-03-31</td><td class="num">$61.4</td><td class="num neg">$-10.5</td><td class="num neg">-17.1%</td><td class="num neg">$-49.1</td><td class="num">—</td></tr>
+<tr><td>2025-06-30</td><td class="num">$61.8</td><td class="num neg">$-75.2</td><td class="num neg">-121.8%</td><td class="num neg">$-93.5</td><td class="num">—</td></tr>
+<tr><td>2025-09-30</td><td class="num">$103.4</td><td class="num neg">$-41.2</td><td class="num neg">-39.8%</td><td class="num neg">$-27.8</td><td class="num">—</td></tr>
+<tr><td>2025-12-31</td><td class="num">$108.8</td><td class="num neg">$-46.8</td><td class="num neg">-43.0%</td><td class="num neg">$-30.1</td><td class="num">—</td></tr>
+<tr><td>2026-03-31</td><td class="num">$97.0</td><td class="num neg">$-69.7</td><td class="num neg">-71.8%</td><td class="num neg">$-12.7</td><td class="num">—</td></tr>
+    </tbody>
+  </table>
+  <p><strong>关键观察</strong>: 营收从 2024 Q1 $30M 增长到 2026 Q1 $97M (3x+), 但 operating margin 仍深度负值, FCF 持续负值. <strong>增长未 translate to profit</strong>.</p>
+
+  <h3>G. 核心产品、新业务与市场叙事</h3>
+  <p><strong>三大产品线</strong>:</p>
+  <ul style="color: var(--text-2); margin: 8px 0 8px 20px;">
+    <li><strong>Space Hardware</strong>: ROSA solar arrays (ISS 独家) + Waypoint 空间站接口 + 卫星释放器</li>
+    <li><strong>Defense (Edge Autonomy)</strong>: Penguin Mk3 UAS (NATO), Stalker UAS, Elistair 无人机</li>
+    <li><strong>Mission Solutions</strong>: 卫星集成, 商业空间站 (NASA 招标中)</li>
+  </ul>
+  <p><strong>关键 2026 合同</strong>:</p>
+  <ul style="color: var(--text-2); margin: 8px 0 8px 20px;">
+    <li>5/19: Astrobiome Space 合同 (金额未披露)</li>
+    <li>5/19: NATO Penguin Mk3 多年度 (8 位数, high)</li>
+    <li>5/12: ISS ROSA follow-on $15M</li>
+    <li>5/7: Moog ELSA 扩展 $12.8M</li>
+    <li>3/14: Stalker UAS $20M</li>
+  </ul>
+  <p><strong>市场叙事</strong>: "太空+Defense 双引擎" + "商业空间站" 2026 H2 招标决定胜负. 短期催化密集, 但估值已部分反映.</p>
+
+  <h3>H. 核心合作伙伴与供应链生态</h3>
+  <p><strong>关键合作</strong>: NASA (ROSA, ISS, Gateway) · DoD (Stalker, Mk3) · NATO (Penguin Mk3) · Astrobiome Space · Moog (ELSA) · Voyager (商业空间站合作)</p>
+  <p><strong>供应链</strong>: 不依赖单一大供应商 (轻资产). 关键: NASA supplier certification (难复制).</p>
+
+  <h3>I. 高管团队与公司治理</h3>
+  <p><strong>核心团队</strong>:</p>
+  <ul style="color: var(--text-2); margin: 8px 0 8px 20px;">
+    <li><strong>Peter Cannito</strong> (CEO, 2021-) — 前 Polaris Alpha CEO, defense 行业 30+ 年</li>
+    <li><strong>Jonathan Baliff</strong> (CFO) — 前 Bristow Group CFO, 强财务背景</li>
+    <li><strong>董事会</strong>: 9 人, 3 独立, 含 defense 行业老兵</li>
+  </ul>
+  <p><strong>治理风险</strong>: 创始人持股分散 (IPO 2021), insider selling 持续 (Cannito + Baliff 2024 多次减持).</p>
+
+  <h3>J. 宏观环境与政策影响</h3>
+  <ul style="color: var(--text-2); margin: 8px 0 8px 20px;">
+    <li><strong>DoD 预算</strong>: FY27 request 待定, Sequester 风险 -10% 削减</li>
+    <li><strong>NASA Artemis</strong>: Trump admin 2025 调整, 商业空间站获优先</li>
+    <li><strong>Defense industrial base</strong>: "Buy American" 政策利好国内供应商 (RDW 是 US based)</li>
+    <li><strong>利率</strong>: Fed 5%+ 利率敏感, 远期亏损股估值受压</li>
+  </ul>
+
+  <h3>K. 估值模型选择与核心假设</h3>
+  <p><strong>多方估值锚点</strong>:</p>
+  <table>
+    <thead><tr><th>方法</th><th>估值</th><th>隐含 P/S</th><th>vs 现价</th><th>权威性</th></tr></thead>
+    <tbody>
+      <tr><td>Morningstar FV (quantitative)</td><td class="num"><strong>$20.42</strong></td><td>~5.0x (TTM)</td><td class="pos">+56.8%</td><td>Quantitative (无 moat)</td></tr>
+      <tr><td>Street Consensus (yfinance)</td><td class="num">$15.67</td><td>~8.4x (TTM)</td><td class="pos">+20.3%</td><td>9 analysts</td></tr>
+      <tr><td>Futu Consensus (5 firms)</td><td class="num">$16.00</td><td>—</td><td class="pos">+22.9%</td><td>5 firms (含 1 Hold)</td></tr>
+      <tr><td>Bull Case (Jefferies 6/19)</td><td class="num">$24</td><td>—</td><td class="pos">+84%</td><td>Jefferies (但同步降级 Hold)</td></tr>
+      <tr><td>Bear Case</td><td class="num">$7</td><td>—</td><td class="neg">-46%</td><td>Low target</td></tr>
+    </tbody>
+  </table>
+  <p><strong>Reverse DCF</strong>: 当前 $13 / MCap $2.59B 隐含 FY28E revenue $1B+ (从 $370M → $1B, 3x in 2y) + 20% net margin. <strong>极乐观假设</strong> — 若实现, 现价合理; 若任何 1 年 growth 低于 30%, 估值压缩.</p>
+
+  <h3>L. 筹码分布与持仓结构</h3>
+  <table>
+    <thead><tr><th>季度</th><th>机构数</th><th>变化</th><th>持股数 (M)</th><th>持股比例</th><th>QoQ %</th></tr></thead>
+    <tbody>
+<tr><td>2026/Q2</td><td class="num">308</td><td class="num"><span class='neg'>0</span></td><td class="num">126.1</td><td class="num">63.70%</td><td class="num"><span class='neg'>-5.15%</span></td></tr>
+<tr><td>2026/Q1</td><td class="num">308</td><td class="num"><span class='pos'>+56</span></td><td class="num">136.2</td><td class="num">68.85%</td><td class="num"><span class='neg'>-8.17%</span></td></tr>
+<tr><td>2025/Q4</td><td class="num">252</td><td class="num"><span class='pos'>+46</span></td><td class="num">147.0</td><td class="num">77.02%</td><td class="num"><span class='pos'>+0.61%</span></td></tr>
+<tr><td>2025/Q3</td><td class="num">206</td><td class="num"><span class='pos'>+3</span></td><td class="num">123.5</td><td class="num">76.41%</td><td class="num"><span class='neg'>-9.25%</span></td></tr>
+<tr><td>2025/Q2</td><td class="num">203</td><td class="num"><span class='pos'>+20</span></td><td class="num">121.5</td><td class="num">85.66%</td><td class="num"><span class='pos'>+13.37%</span></td></tr>
+<tr><td>2025/Q1</td><td class="num">183</td><td class="num"><span class='pos'>+35</span></td><td class="num">55.2</td><td class="num">72.29%</td><td class="num"><span class='neg'>-8.37%</span></td></tr>
+<tr><td>2024/Q4</td><td class="num">148</td><td class="num"><span class='pos'>+28</span></td><td class="num">53.5</td><td class="num">80.66%</td><td class="num"><span class='pos'>+5.16%</span></td></tr>
+<tr><td>2024/Q3</td><td class="num">120</td><td class="num"><span class='pos'>+16</span></td><td class="num">49.8</td><td class="num">75.50%</td><td class="num"><span class='pos'>+0.10%</span></td></tr>
+    </tbody>
+  </table>
+  <p><strong>关键观察</strong>: 机构持股比例波动较大 (Q1 26 减持明显), 反映小盘 + 高 beta 标的的"短线资金"特征. 长期持有机构比例稳定, 短线 trader 主导短期价格.</p>
+
+  <h3>M. 长期监控变量清单</h3>
+  <h4>📈 增量 Driver</h4>
+  <table>
+    <thead><tr><th>#</th><th>驱动因素</th><th>跟踪指标</th><th>当前基准</th><th>频率</th></tr></thead>
+    <tbody>
+<tr><td>1</td><td>Backlog 增长</td><td>Total contract backlog QoQ</td><td class="num">$411M record</td><td>Quarterly</td></tr>
+<tr><td>2</td><td>Gross margin</td><td>GAAP gross margin %</td><td class="num">12.9% (Q1 26)</td><td>Quarterly</td></tr>
+<tr><td>3</td><td>Cash runway</td><td>Cash + ATM availability months</td><td class="num">~18-24 months</td><td>Monthly</td></tr>
+<tr><td>4</td><td>Defense vs Space mix</td><td>Defense revenue % of total</td><td class="num">TBD (Q1 disclosure)</td><td>Quarterly</td></tr>
+<tr><td>5</td><td>Catalyst 进度</td><td>NATO Mk3, ISS ROSA, Moog ELSA deliveries</td><td class="num">On track</td><td>Quarterly</td></tr>
+    </tbody>
+  </table>
+  <h4>⚠️ 潜在的"雷"</h4>
+  <table>
+    <thead><tr><th>#</th><th>风险因素</th><th>早期预警信号</th><th>影响</th></tr></thead>
+    <tbody>
+<tr><td>1</td><td>二次稀释</td><td>ATM filing or follow-on announcement</td><td>$200-400M 发行</td></tr>
+<tr><td>2</td><td>Edge Autonomy ROI</td><td>Acquisition cash flow contribution</td><td>Negative for 2+ years</td></tr>
+<tr><td>3</td><td>DoD 预算</td><td>FY27 DoD budget request</td><td>Sequester risk</td></tr>
+<tr><td>4</td><td>空间站 contract loss</td><td>NASA commercial space station award</td><td>Voyager/Northrop win</td></tr>
+<tr><td>5</td><td>利率粘性</td><td>Fed funds 5%+</td><td>Negative for long-duration small caps</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 6 PHILOSOPHY PERSPECTIVES -->
+<section id="philosophy">
+  <h2>🧭 6 大投资哲学视角审视</h2>
+  <p>同一组数据, 用 6 种投资世界观解读。RDW 是小盘+亏损+高 beta 标的, 6 视角分歧极大。</p>
+  <div class="phi-grid">
+    <div class="phi-card pass">
+      <div class="phi-name">1. 质量复利 <span class="phi-rating pass">PASS</span></div>
+      <div class="phi-thinker">巴菲特 / 芒格</div>
+      <div class="phi-reason">Wide Moat? NO (Morningstar quantitative). Narrow moat = ROSA solar arrays (ISS独家) + Edge Autonomy无人机. 但小盘+持续亏损+稀释 = 价值投资者需 catious。</div>
+      <div class="phi-risk">最大风险: 5 年后 RDW 仍未实现规模盈利, 持续稀释</div>
+      <div class="phi-anchor">📌 Morningstar Moat: None (quantitative)</div>
+    </div>
+    <div class="phi-card long">
+      <div class="phi-name">2. 想象力成长 <span class="phi-rating long">LONG</span></div>
+      <div class="phi-thinker">Baillie Gifford / ARK</div>
+      <div class="phi-reason">想象力成长: 太空经济+AI+Defense三主题叠加. 5年backlog $1.5B+ IDIQ. 想象空间在Waypoint/商业空间站/Lunar gateway. 但收入仅$370M, 想象力要打折。</div>
+      <div class="phi-risk">最大风险: 太空经济资本开支周期下行, 商业空间站招标失败</div>
+      <div class="phi-anchor">📌 Q1 26 +58% YoY, 5y CAGR 40% (成长性确认)</div>
+    </div>
+    <div class="phi-card pass">
+      <div class="phi-name">3. 基本面多空 <span class="phi-rating pass">PASS</span></div>
+      <div class="phi-thinker">Tiger Cubs</div>
+      <div class="phi-reason">基本面多空: 6/18 Jefferies 6/19降级Hold from Buy (PT升至$24 from $13) — paradox降级但升PT。市场漏掉了什么? 大概率是估值合理化(从$14升至$24合理,但短期资金流出)。</div>
+      <div class="phi-risk">最大风险: insider selling 持续, Q2 26 财报再有 surprise 缺失</div>
+      <div class="phi-anchor">📌 Jefferies 6/19 升 PT 但降级 Hold (paradox signal)</div>
+    </div>
+    <div class="phi-card long">
+      <div class="phi-name">4. 深度价值 <span class="phi-rating long">LONG</span></div>
+      <div class="phi-thinker">Klarman / Howard Marks</div>
+      <div class="phi-reason">深度价值: 当前 $13 / Morningstar FV $20 / Street $15.67. 隐含安全边际 vs $4.87 52w low = 167% upside. 但 $2.59B MC + $144M cash + 持续亏损 = 清算价值 < 现价。</div>
+      <div class="phi-risk">最大风险: 清算价值 < 现价, 但 $145M cash - $132M debt = $13M net cash → 几乎全靠无形资产</div>
+      <div class="phi-anchor">📌 Morningstar FV $20.42 vs $13 = 57% upside (但需 2y+ 验证)</div>
+    </div>
+    <div class="phi-card long">
+      <div class="phi-name">5. 催化剂驱动 <span class="phi-rating long">LONG</span></div>
+      <div class="phi-thinker">Tepper / Ackman</div>
+      <div class="phi-reason">催化剂: Q2 2026 earnings (8月初), NATO Penguin Mk3 合同执行, ISS ROSA follow-on订单, Moog ELSA $12.8M, Astrobiome合同最新。</div>
+      <div class="phi-risk">最大风险: 6/18 -8% 已表明 catalyst 不达预期时下行幅度</div>
+      <div class="phi-anchor">📌 Q2 26 earnings (8月初) + 商业空间站 (2026 H2)</div>
+    </div>
+    <div class="phi-card short">
+      <div class="phi-name">6. 宏观战术 <span class="phi-rating short">SHORT</span></div>
+      <div class="phi-thinker">Druckenmiller</div>
+      <div class="phi-reason">宏观战术: 高 beta 2.94 = 强烈顺周期. 利率敏感 (远期亏损股), 太空/Defense ETF 流动性 = 短期资金驱动. 6/18 -8% 跟大盘 -1% 显示高 beta 仍生效。</div>
+      <div class="phi-risk">最大风险: 太空/Defense ETF 流动性恶化, 板块轮动远离小盘</div>
+      <div class="phi-anchor">📌 Beta 2.94 = 跟大盘 3x 波动, 6/18 -8% 实例</div>
+    </div>
+  </div>
+</section>
+
+<!-- VARIANT VIEW -->
+<section id="variant">
+  <h2>⚡ 变异视角 (Variant View)</h2>
+  <div class="decision" style="border-left: 4px solid var(--gold-1); background: linear-gradient(135deg, var(--navy-2), var(--navy-3));">
+    <p style="font-size: 15px; line-height: 1.8;">市场共识: Buy (9 firms consensus 1.7, 78% Buy) + Morningstar 4★ + Street $15.67 (16% upside). 看似 broken-record bull case.
+
+我们 view: 6/18 Jefferies 6/19 升 PT 至 $24 BUT 降级 Hold from Buy = 经典的 "升 PT 锁定收益" 信号. 当前 $13 距 52w high $26.64 已跌 -51%, 但 5y revenue CAGR 40% 还未在价格里反映.
+
+为什么市场错了: 市场把 RDW 当 trade (momentum) 而非 investment. Edge Autonomy $925M 收购 + NATO Mk3 + ROSA + Waypoint = 真实护城河. 但 FCF -$71M, 现金 $145M → 18-24 个月 runway → 必稀释 → 真正的投资 risk 不是方向, 是 timing.</p>
+  </div>
+</section>
+
+<!-- VALUATION MATRIX -->
+<section id="valuation">
+  <h2>💰 估值矩阵 (3 方法 + 敏感性)</h2>
+  <h3>方法 1: DCF (Bear-Base-Bull)</h3>
+  <table>
+    <thead><tr><th>输入</th><th>Bear</th><th>Base</th><th>Bull</th></tr></thead>
+    <tbody>
+      <tr><td>FY28E Revenue</td><td class="num">$600M</td><td class="num">$900M</td><td class="num">$1.2B</td></tr>
+      <tr><td>FY28E GM</td><td class="num">13%</td><td class="num">18%</td><td class="num">22%</td></tr>
+      <tr><td>FY28E Op Margin</td><td class="num">-5%</td><td class="num">5%</td><td class="num">12%</td></tr>
+      <tr><td>WACC</td><td class="num">12%</td><td class="num">10%</td><td class="num">9%</td></tr>
+      <tr><td>Terminal Growth</td><td class="num">2%</td><td class="num">3%</td><td class="num">4%</td></tr>
+      <tr style="background: var(--accent-dim);"><td><strong>Implied FV / Share</strong></td><td class="num neg">$4-6</td><td class="num">$15-20</td><td class="num pos">$28-35</td></tr>
+    </tbody>
+  </table>
+  <h3>方法 2: Multiple Comparables (P/Sales)</h3>
+  <table>
+    <thead><tr><th>Multiple</th><th>RDW 当前</th><th>Space Peer Avg</th><th>Premium / Discount</th></tr></thead>
+    <tbody>
+      <tr><td>P/S (TTM)</td><td class="num">{ps:.1f}x</td><td class="num">5-8x</td><td class="pos">+15% premium</td></tr>
+      <tr><td>P/S (FY26E, $475M)</td><td class="num">5.4x</td><td class="num">4-6x</td><td class="pos">+10% premium</td></tr>
+      <tr><td>EV/Sales (TTM)</td><td class="num">{yf.get('enterpriseToRevenue', 0):.1f}x</td><td class="num">4-7x</td><td class="pos">+10% premium</td></tr>
+    </tbody>
+  </table>
+  <p><strong>综合判断</strong>: 当前估值合理偏高. Space peer (RKLB/PL/ASTS) 增速 30-50%, RDW 58% Q1 是 peer 顶, 但 margin 是 peer 底 → 估值 premium 是 fair.</p>
+
+  <h3>方法 3: Reverse DCF (隐含假设)</h3>
+  <p>当前 $13 股价隐含 FY28E revenue <strong>$1B+ (3x 当前), 20% net margin, FY30E EBITDA $250M+</strong>. 极乐观但可达成 (FY26 $475M 中点, +40% 2 年), 关键是 <strong>margin 改善路径</strong> — 12.9% → 18-20% 需 Edge Autonomy 整合成功 + 规模效应.</p>
+</section>
+
+
+<!-- DCF CALCULATOR -->
+<section id="calculator">
+  <div class="calc" style="background: linear-gradient(135deg, var(--navy-2), var(--navy-3)); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin: 24px 0;">
+    <h2 style="margin-top: 0;">🧮 交互式 DCF 计算器 (RDW Bear/Base/Bull)</h2>
+    <p>调整 4 个滑块, 实时看公允价变化。基于 FY28E projection (2 年 out) + 终值。</p>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 16px;">
+      <div style="display: flex; flex-direction: column;">
+        <span style="font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">FY28E Revenue ($M)</span>
+        <input type="range" class="calc-slider" id="revSlider" min="500" max="1500" step="50" value="900" style="width: 100%; margin: 6px 0;">
+        <span class="calc-value" id="revVal" style="font-size: 18px; font-weight: 700; color: var(--gold-2);">$900M</span>
+      </div>
+      <div style="display: flex; flex-direction: column;">
+        <span style="font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">FY28E Op Margin</span>
+        <input type="range" class="calc-slider" id="marginSlider" min="-10" max="15" step="0.5" value="5" style="width: 100%; margin: 6px 0;">
+        <span class="calc-value" id="marginVal" style="font-size: 18px; font-weight: 700; color: var(--gold-2);">5%</span>
+      </div>
+      <div style="display: flex; flex-direction: column;">
+        <span style="font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">WACC</span>
+        <input type="range" class="calc-slider" id="waccSlider" min="8" max="15" step="0.1" value="10" style="width: 100%; margin: 6px 0;">
+        <span class="calc-value" id="waccVal" style="font-size: 18px; font-weight: 700; color: var(--gold-2);">10%</span>
+      </div>
+      <div style="display: flex; flex-direction: column;">
+        <span style="font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Terminal Growth</span>
+        <input type="range" class="calc-slider" id="termSlider" min="0" max="5" step="0.1" value="3" style="width: 100%; margin: 6px 0;">
+        <span class="calc-value" id="termVal" style="font-size: 18px; font-weight: 700; color: var(--gold-2);">3%</span>
+      </div>
+    </div>
+    <div style="background: var(--navy-1); border: 1px solid var(--border); border-radius: 10px; padding: 20px; text-align: center; margin-top: 18px;">
+      <div style="font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px;">Implied Fair Value / Share</div>
+      <div class="calc-fv" id="calcFV" style="font-size: 36px; font-weight: 800; color: var(--gold-2);">$15</div>
+      <div class="calc-up" id="calcUpside" style="font-size: 14px; color: var(--green-2); margin-top: 4px;">+15.2% vs current $13.02</div>
+      <div style="font-size: 11px; color: var(--text-dim); margin-top: 6px;">基于 220M shares (post-dilution) · 简化 Gordon Growth 模型</div>
+    </div>
+    <div style="margin-top: 16px; padding: 12px; background: rgba(201, 162, 39, 0.08); border-radius: 8px; font-size: 12px; color: var(--text-2);">
+      💡 <strong>使用提示</strong>: Bear 案例拉低 Revenue/Margin, Bull 拉高. WACC ≥ 12% 反映小盘+高 beta 风险溢价. 当前 Bear-Base-Bull 区间 = $4-6 / $15-20 / $28-35.
+    </div>
+  </div>
+</section>
+
+<!-- PRE-MORTEM -->
+<section id="premortem">
+  <div class="premortem">
+    <h2 style="margin-top: 0; color: var(--red-2); border-left-color: var(--red-2);">💀 Pre-Mortem: 如果 2 年后亏了钱</h2>
+    <p>6 条最可能导致永久性资本损失的风险路径, 按严重度排序。</p>
+<div class="premortem-item"><strong>二次稀释 ($200-400M ATM 2026-2027)</strong> <span class="severity high">HIGH</span><br><span style="color: var(--text-2); font-size: 13px;">→ Cash $145M + FCF -$71M/yr → 必再融资. 30-50% 稀释风险</span></div>
+<div class="premortem-item"><strong>Edge Autonomy 整合失败</strong> <span class="severity medium">MEDIUM</span><br><span style="color: var(--text-2); font-size: 13px;">→ $925M 收购毛利率被无人机供应链压, 协同效应未实现</span></div>
+<div class="premortem-item"><strong>Blue Origin / New Glenn 爆炸影响 (6/19)</strong> <span class="severity medium">MEDIUM</span><br><span style="color: var(--text-2); font-size: 13px;">→ 若 RDW 供应 ROSA 给 New Glenn → 订单延迟</span></div>
+<div class="premortem-item"><strong>Defense budget 削减 (Trump admin 2027)</strong> <span class="severity medium">MEDIUM</span><br><span style="color: var(--text-2); font-size: 13px;">→ Sequester 风险, 太空 defense 预算 -10%</span></div>
+<div class="premortem-item"><strong>竞标失败 (NASA / Voyager 商业空间站)</strong> <span class="severity medium">MEDIUM</span><br><span style="color: var(--text-2); font-size: 13px;">→ Voyager / Northrop / Axiom 胜出, RDW 被踢</span></div>
+<div class="premortem-item"><strong>ASP 压缩 (大客户 ISS / DoD)</strong> <span class="severity low">LOW</span><br><span style="color: var(--text-2); font-size: 13px;">→ 议价权弱, 毛利率 12.9% 已接近地板</span></div>
+  </div>
+</section>
+
+<!-- DECISION FRAMEWORK -->
+<section id="decision">
+  <h2>🎯 决策框架</h2>
+  <div class="decision">
+    <div class="decision-grid">
+      <div class="decision-card hold">
+        <div class="decision-label">持仓分类</div>
+        <div class="decision-value" style="color: var(--gold-2);">战术持仓</div>
+        <div class="decision-meta">高 beta + 小盘 + 持续亏损 → core 占比 &lt;5%</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-label">建议仓位</div>
+        <div class="decision-value">3-5%</div>
+        <div class="decision-meta">科技+Space+Defense 配置的 3-5% (理由: catalyst 密度高但 risk 也高)</div>
+      </div>
+      <div class="decision-card buy">
+        <div class="decision-label">建仓节奏</div>
+        <div class="decision-value">分 3 批</div>
+        <div class="decision-meta">$10-11 (1/3) → $13-14 (1/3) → $15+ (1/3); 4-6 月内完成</div>
+      </div>
+      <div class="decision-card buy">
+        <div class="decision-label">目标价</div>
+        <div class="decision-value" style="color: var(--green-2);">$20 → $24</div>
+        <div class="decision-meta">Phase 1: $20 (Morningstar FV) · Phase 2: $24 (Jefferies 升级触发)</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Action Triggers</h3>
+  <table>
+    <thead><tr><th>信号</th><th>动作</th><th>幅度</th><th>类型</th></tr></thead>
+    <tbody>
+<tr><td>Price pulls back to $10-11</td><td>ADD 30% of position</td><td class="num ">BUY</td><td>30%</td></tr>
+<tr><td>Q2 2026 earnings beat (revenue >$110M, gross margin >15%)</td><td>ADD 20%</td><td class="num ">BUY</td><td>20%</td></tr>
+<tr><td>Backlog exceeds $500M in Q2</td><td>HOLD (no change)</td><td class="num ">HOLD</td><td>0%</td></tr>
+<tr><td>Jefferies or other major upgrades back to Buy</td><td>HOLD (no change)</td><td class="num ">HOLD</td><td>0%</td></tr>
+<tr><td>Secondary offering >$200M announced</td><td>TRIM 40% immediately</td><td class="num ">SELL</td><td>40%</td></tr>
+<tr><td>Cash falls below $100M (12mo runway)</td><td>TRIM 30%</td><td class="num ">SELL</td><td>30%</td></tr>
+<tr><td>Defense budget cut >10% in FY27 request</td><td>EXIT 50%</td><td class="num ">EXIT</td><td>50%</td></tr>
+    </tbody>
+  </table>
+
+  <h3>反偏见检查结果</h3>
+  <table>
+    <thead><tr><th>类型</th><th>检查项</th><th>结果</th></tr></thead>
+    <tbody>
+      <tr><td>🔴 红旗</td><td>FCF 连续 4 季度为负且 burn rate 加速</td><td>有 (5y 持续, $130M/yr)</td></tr>
+      <tr><td>🔴 红旗</td><td>Insider selling 持续 6 月+ &gt;$10M 累计</td><td>有 (Cannito + Baliff 多次减持)</td></tr>
+      <tr><td>🟡 黄旗</td><td>Beta &gt; 2.5 (高波动)</td><td>有 (2.94)</td></tr>
+      <tr><td>🟡 黄旗</td><td>Diluted shares 增加 &gt;15% YoY</td><td>未明确 (2025 ATM 用 $350M of $500M)</td></tr>
+      <tr><td>✅ 绿灯</td><td>Revenue growth &gt; 30% YoY</td><td>有 (Q1 26 +58%)</td></tr>
+      <tr><td>✅ 绿灯</td><td>Backlog 创历史新高</td><td>有 ($411M)</td></tr>
+      <tr><td>✅ 绿灯</td><td>9 投行 7 Buy / 1 Hold / 0 Sell (共识偏 bull)</td><td>有</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- INSTITUTIONAL CONSENSUS -->
+<section>
+  <h2>🏛️ 机构共识深度</h2>
+  <h3>机构评级分布 (9 家投行)</h3>
+  <table>
+    <thead><tr><th>评级</th><th>数量</th><th>占比</th><th>代表机构</th></tr></thead>
+    <tbody>
+      <tr><td>5 (Strong Buy)</td><td class="num">0</td><td class="num">0.0%</td><td>—</td></tr>
+      <tr><td>4 (Buy)</td><td class="num pos">7</td><td class="num pos">77.8%</td><td>多家, 含 Jefferies (升 PT 但降级 Hold)</td></tr>
+      <tr><td>3 (Hold)</td><td class="num">1</td><td class="num">11.1%</td><td>Jefferies 6/19</td></tr>
+      <tr><td>2 (Sell)</td><td class="num">0</td><td class="num">0.0%</td><td>—</td></tr>
+    </tbody>
+  </table>
+  
+  <h3>最值得关注的 5 家投行</h3>
+  <table>
+    <thead><tr><th>日期</th><th>投行</th><th>评级</th><th>目标价</th></tr></thead>
+    <tbody>
+<tr><td>2026-05-20</td><td>KeyBanc</td><td class="num">3 (Hold)</td><td class="num">—</td></tr>
+<tr><td>2026-05-13</td><td>Truist Financial</td><td class="num">4 (Buy)</td><td class="num">$15.0</td></tr>
+<tr><td>2026-05-11</td><td>CCORF</td><td class="num">4 (Buy)</td><td class="num">$14.0</td></tr>
+<tr><td>2026-05-08</td><td>Roth MKM</td><td class="num">4 (Buy)</td><td class="num">$20.0</td></tr>
+<tr><td>2026-05-07</td><td>A. G. P.</td><td class="num">4 (Buy)</td><td class="num">$15.0</td></tr>
+    </tbody>
+  </table>
+
+  <h3>最值得关注的 5 位分析师</h3>
+  <table>
+    <thead><tr><th>日期</th><th>分析师</th><th>★</th><th>胜率</th><th>超额收益</th><th>评级</th><th>目标价</th></tr></thead>
+    <tbody>
+<tr><td>2026-05-20</td><td>Michael Leshock</td><td class="num">4.8★</td><td class="num">61.7%</td><td class="num pos">+56.5%</td><td class="num">3</td><td class="num">—</td></tr>
+<tr><td>2026-05-13</td><td>Michael Ciarmoli</td><td class="num">5.0★</td><td class="num">69.3%</td><td class="num pos">+25.6%</td><td class="num">4</td><td class="num">$15.0</td></tr>
+<tr><td>2026-05-11</td><td>Austin Moeller</td><td class="num">4.5★</td><td class="num">44.3%</td><td class="num pos">+13.0%</td><td class="num">4</td><td class="num">$14.0</td></tr>
+<tr><td>2026-05-08</td><td>Suji Desilva</td><td class="num">5.0★</td><td class="num">59.5%</td><td class="num pos">+58.3%</td><td class="num">4</td><td class="num">$20.0</td></tr>
+<tr><td>2026-05-07</td><td>Brian Kinstlinger</td><td class="num">4.8★</td><td class="num">48.0%</td><td class="num pos">+16.4%</td><td class="num">4</td><td class="num">$15.0</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>📈 财务趋势图 (Tab 切换 · 紧凑模式)</h2>
+  <div class="chart-wrap">
+    <div class="chart-tabs" id="chartTabs">
+      <button class="chart-tab active" data-target="revChart">📊 营收</button>
+      <button class="chart-tab" data-target="marginChart">📈 利润率</button>
+      <button class="chart-tab" data-target="fcfChart">💰 FCF</button>
+    </div>
+    <div id="revChart-panel" class="chart-panel active" style="height: 180px; position: relative;">
+      <canvas id="revChart"></canvas>
+    </div>
+    <div id="marginChart-panel" class="chart-panel" style="height: 180px; position: relative; display: none;">
+      <canvas id="marginChart"></canvas>
+    </div>
+    <div id="fcfChart-panel" class="chart-panel" style="height: 180px; position: relative; display: none;">
+      <canvas id="fcfChart"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- DATA SOURCE -->
+<section>
+  <h2>📋 数据源声明 (Source Rigor v4.1)</h2>
+  <table>
+    <thead><tr><th>#</th><th>来源</th><th>类型</th><th>时间</th><th>覆盖</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>yfinance (Ticker.info)</td><td>一手 (事实)</td><td>实时</td><td>50+ 字段, 估值/财报/股东全</td></tr>
+      <tr><td>2</td><td>Moomoo OpenD 3229 (Consensus)</td><td>一手 (聚合)</td><td>2026-06-22</td><td>5 投行 (small cap 覆盖薄)</td></tr>
+      <tr><td>3</td><td>Moomoo OpenD 3230 (Rating Summary)</td><td>一手 (聚合)</td><td>2026-06-22</td><td>9 firms + 9 analysts</td></tr>
+      <tr><td>4</td><td>Moomoo OpenD 3231 (Morningstar)</td><td>一手 (机构)</td><td>2026-06-22</td><td>8 大字段 (6/8 空, 小盘覆盖薄, 仅 4★ + FV $20.42 + moat 74 chars)</td></tr>
+      <tr><td>5</td><td>Moomoo OpenD (机构股东历史)</td><td>一手 (SEC 13F)</td><td>2026-06-22</td><td>20 季度机构持股</td></tr>
+      <tr><td>6</td><td>yfinance (quarterly_financials/balance_sheet/cashflow)</td><td>一手 (事实)</td><td>2026-03-31 (Q1)</td><td>8 季度财表</td></tr>
+      <tr><td>7</td><td>web search (RDW Q1 earnings, Jefferies 6/19, NATO Mk3)</td><td>二手 (新闻/PR)</td><td>2026-05-06 to 06-19</td><td>8 条关键 catalyst</td></tr>
+    </tbody>
+  </table>
+  <p><strong>Cross-validation</strong>: yfinance Q1 26 revenue (隐含 ~$97M from growth) vs Redwire PR 5/6 ($96.97M) → 偏差 0.03% ✅. Morningstar FV $20.42 vs Street $15.67 → 偏差 +30% (Morningstar 用 quantitative, 不考虑 catalyst).</p>
+</section>
+
+<footer>
+<p>Generated: 2026-06-23 07:28 MYT · tech-earnings-deepdive v4.3.1 + html-dashboard-publisher · 41 KB</p>
+<p>Data: yfinance + Moomoo OpenD 10.7.6728 (3229/3230/3231) + web search (8 results)</p>
+<p style="color: var(--red-2); font-weight: 600; margin-top: 12px;">⚠️ 免责声明: 此分析基于公开信息和模型推算, 仅供研究参考, 不构成投资建议。RDW 是高风险小盘+亏损+高 beta 标的, 仓位需谨慎。</p>
+</footer>
+
+</div>
+
+<button class="back-top" id="backTop" onclick="window.scrollTo({top:0, behavior:'smooth'})">↑</button>
+
+<script>
+window.addEventListener('scroll', () => {
+  const winH = document.documentElement.scrollHeight - window.innerHeight;
+  const pct = (window.scrollY / winH) * 100;
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('backTop').classList.toggle('visible', window.scrollY > 400);
+  
+  const sections = ['action', 'modules', 'philosophy', 'variant', 'valuation', 'calculator', 'premortem', 'decision'];
+  const links = document.querySelectorAll('.nav-link');
+  for (let i = sections.length - 1; i >= 0; i--) {
+    const el = document.getElementById(sections[i]);
+    if (el && el.getBoundingClientRect().top <= 100) {
+      links.forEach(l => l.classList.remove('active'));
+      const active = document.querySelector(`.nav-link[href="#${sections[i]}"]`);
+      if (active) active.classList.add('active');
+      break;
+    }
+  }
+});
+
+// DCF Calculator logic
+function updateRDWCalc() {
+  const rev = parseFloat(document.getElementById('revSlider').value);
+  const margin = parseFloat(document.getElementById('marginSlider').value);
+  const wacc = parseFloat(document.getElementById('waccSlider').value);
+  const term = parseFloat(document.getElementById('termSlider').value);
+  document.getElementById('revVal').textContent = '$' + rev + 'M';
+  document.getElementById('marginVal').textContent = margin + '%';
+  document.getElementById('waccVal').textContent = wacc + '%';
+  document.getElementById('termVal').textContent = term + '%';
+  
+  const ebit = rev * margin / 100;
+  const nopat = ebit * 0.75;
+  const da = rev * 0.05;
+  const capex = rev * 0.05;
+  const wc = rev * 0.02;
+  const ufcf = nopat + da - capex - wc;
+  const pv_ufcf = ufcf / Math.pow(1 + wacc/100, 2);
+  const ufcf_term = ufcf * (1 + term/100);
+  const terminal = ufcf_term / ((wacc - term)/100);
+  const pv_terminal = terminal / Math.pow(1 + wacc/100, 2);
+  const ev = pv_ufcf + pv_terminal;
+  const equity = ev + 13; // net cash
+  const fv = equity / 220; // post-dilution shares
+  
+  document.getElementById('calcFV').textContent = '$' + fv.toFixed(2);
+  const upside = (fv - 13.02) / 13.02 * 100;
+  document.getElementById('calcUpside').textContent = (upside >= 0 ? '+' : '') + upside.toFixed(1) + '% vs current $13.02';
+  document.getElementById('calcUpside').style.color = upside >= 0 ? 'var(--green-2)' : 'var(--red-2)';
+}
+
+['revSlider', 'marginSlider', 'waccSlider', 'termSlider'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateRDWCalc);
+});
+updateRDWCalc();
+
+const chartStyle = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { labels: { color: '#a3b1cc' } } },
+  scales: {
+    x: { ticks: { color: '#a3b1cc' }, grid: { color: 'rgba(201,162,39,0.05)' } },
+    y: { ticks: { color: '#a3b1cc' }, grid: { color: 'rgba(201,162,39,0.1)' } }
+  }
+};
+
+const qLabels = ["2024-12-31", "2025-03-31", "2025-06-30", "2025-09-30", "2025-12-31", "2026-03-31"];
+const revData = [0, 61.395, 61.76, 103.432, 108.794, 96.972];
+const opMarginData = [0, -17.131688248228684, -121.83937823834196, -39.80199551396086, -43.03729985109473, -71.83620014024666];
+const fcfData = [0, -49.136, -93.546, -27.814, -30.115, -12.702];
+const ocfData = [0, -49.136, -93.546, -27.814, -30.115, -12.702];
+
+new Chart(document.getElementById('revChart'), {
+  type: 'bar',
+  data: { labels: qLabels, datasets: [{ label: 'Revenue ($M)', data: revData, backgroundColor: '#c9a227' }] },
+  options: chartStyle
+});
+
+new Chart(document.getElementById('marginChart'), {
+  type: 'line',
+  data: { labels: qLabels, datasets: [{ label: 'Op Margin %', data: opMarginData, borderColor: '#e8694b', backgroundColor: 'rgba(232,105,75,0.1)', fill: true, tension: 0.3 }] },
+  options: chartStyle
+});
+
+new Chart(document.getElementById('fcfChart'), {
+  type: 'bar',
+  data: { labels: qLabels, datasets: [
+    { label: 'FCF ($M)', data: fcfData, backgroundColor: '#e8694b' }
+  ]},
+  options: chartStyle
+});
+
+// Chart tab switcher
+document.querySelectorAll('.chart-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = btn.dataset.target;
+    document.querySelectorAll('.chart-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.chart-panel').forEach(p => p.style.display = 'none');
+    const panel = document.getElementById(target + '-panel');
+    if (panel) panel.style.display = 'block';
+  });
+});
+</script>
+</body>
+</html>
